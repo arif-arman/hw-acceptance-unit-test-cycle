@@ -1,4 +1,6 @@
 class MoviesController < ApplicationController
+  
+  @@noticeFlash = 1   # if 0, do not flash
 
   def movie_params
     params.require(:movie).permit(:title, :rating, :description, :release_date, :director)
@@ -31,6 +33,10 @@ class MoviesController < ApplicationController
       redirect_to :sort => sort, :ratings => @selected_ratings and return
     end
     @movies = Movie.where(rating: @selected_ratings.keys).order(ordering)
+    if @@noticeFlash == 0
+      @@noticeFlash = 1
+      flash[:notice] = nil 
+    end 
   end
 
   def new
@@ -60,5 +66,20 @@ class MoviesController < ApplicationController
     flash[:notice] = "Movie '#{@movie.title}' deleted."
     redirect_to movies_path
   end
+  
+  def filter_by_director
+    m = Movie.find(params[:id])
+    d = m.director
+    
+    if not d or d.empty?
+      flash[:notice] = %Q{'#{m.title}' has no director info}
+      @@noticeFlash = 1
+      redirect_to movies_path
+    else 
+      @movies = Movie.where(director:d)
+      @@noticeFlash = 0
+      flash[:notice] = %Q{'#{movies.size}' movies found with director '#{d}'}
+    end
+  end 
 
 end
